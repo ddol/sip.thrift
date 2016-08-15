@@ -1,20 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import xmltodict
 from subprocess import check_output
 import json
 import argh
-try:
-    from io import BytesIO as StringIO
-except ImportError:
-    from xmltodict import StringIO
-    
-def _encode(s):
-    try:
-        return bytes(s, 'ascii')
-    except (NameError, TypeError):
-        return s
-    
+import ConfigParser
+
+config = ConfigParser.RawConfigParser()
+config.read('proto.cfg')
+
 def convert(file_in, kind='xml', indent=None):
     #print(file_in)
     if kind == 'xml':
