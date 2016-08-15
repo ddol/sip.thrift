@@ -4,17 +4,18 @@ import xmltodict
 from subprocess import check_output
 import json
 import argh
-import ConfigParser
+import configparser
 
-config = ConfigParser.RawConfigParser()
+config = configparser.SafeConfigParser()
 config.read('proto.cfg')
 
-def convert(file_in, kind='xml', indent=None):
+def convert(path : 'file to read', kind : 'xml or pcap' = 'xml',
+            indent = None):
     #print(file_in)
     if kind == 'xml':
-        xml = open(file_in)
+        xml = open(path)
     elif kind =='pcap':
-        xml = check_output(['tshark', '-T', 'pdml', '-r', file_in])
+        xml = check_output(['tshark', '-T', 'pdml', '-r', path])
         
     parsed_dict = xmltodict.parse(xml)
     json_output = json.dumps(parsed_dict, 
