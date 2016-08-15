@@ -23,7 +23,7 @@ def convert(file_in, kind='xml', indent=None):
     elif kind =='pcap':
         xml = check_output(['tshark', '-T', 'pdml', '-r', file_in])
         
-    parsed_dict = ET.parse(xml)
+    parsed_dict = parse(xml)
     json_output = dumps(parsed_dict, indent=indent, separators=(',', ':'))
 
     return json_output
