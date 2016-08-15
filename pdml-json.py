@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-from xmltodict import parse
+import xmltodict
 from subprocess import check_output
-from json import dumps
-import xml.etree.ElementTree as ET
+import json
 import argh
 try:
     from io import BytesIO as StringIO
@@ -19,12 +18,14 @@ def _encode(s):
 def convert(file_in, kind='xml', indent=None):
     #print(file_in)
     if kind == 'xml':
-        xml = open(file_in)        
+        xml = open(file_in)
     elif kind =='pcap':
         xml = check_output(['tshark', '-T', 'pdml', '-r', file_in])
         
-    parsed_dict = parse(xml)
-    json_output = dumps(parsed_dict, indent=indent, separators=(',', ':'))
+    parsed_dict = xmltodict.parse(xml)
+    json_output = json.dumps(parsed_dict, 
+                        indent=int(indent),
+                        separators=(',', ':'))
 
     return json_output
 
