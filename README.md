@@ -1,5 +1,3 @@
-# sip-shark
+# sip.thrift
 
-Wireshark's `tshark` program provides an PDML (like XML) output. 
-
-This script extracts a nice clean JSON object, for logging and analytics.
+A Thrift spec for SIP, with a reference python implementation using `pyshark`.

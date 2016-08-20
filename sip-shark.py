@@ -2,100 +2,39 @@
 
 import pyshark
 import thrift
-import subprocess
 import json
 import argh
-import ConfigParser
-import xml.etree.ElementTree as ET
 
-try:
-    from html import unescape  # python 3.4+
-except ImportError:
-    try:
-        from html.parser import HTMLParser  # python 3.x (<3.4)
-    except ImportError:
-        from HTMLParser import HTMLParser  # python 2.x
-    unescape = HTMLParser().unescape
-
-
-
-Config = ConfigParser.SafeConfigParser()
-Config.read('proto.cfg')
-
-def convert(path, kind = 'xml', indent = None):
-    
-    
-    
-    #print(file_in)
-    if kind == 'xml':
-        xml = open(path)
-    elif kind =='pcap':
-        xml = subprocess.check_output(['tshark', '-T', 'pdml', '-r', path])
-        
+def convert(path, host='DEFAULT', indent=None):
     if indent:
         indent = int(indent)
         
-    return_dict = simplify(xml)
+    packet_list = []    
     
-    json_output = json.dumps(return_dict, 
+    cap = pyshark.FileCapture(path)
+    for packet in cap:
+        packet_list.append(extract(packet, host))
+    
+    json_output = json.dumps(packet_list, 
                         indent=indent,
                         separators=(',', ':'))
 
     return json_output
 
-def simplify(xml):
-    root = ET.parse(xml)
-    packet_list = []
+def extract(packet):
+    thrift = {}
+    thrift['utc_time'] = packet.sniff_timestamp
+    thrift['protocols'] = [l.layer_name for l in packet.layers]
+    thrift['capture_host'] = host
+    thrift['ip_src'] = packet.ip.src
+    thrift['ip_dst'] = packet.ip.dst
+    thrift['call_id'] = packet.sip.get_field('Call-ID')
+    thrift['sip_headders'] = packet.sip.get_field('msg_hdr').split(r'\xd\xa')
+    sip_att = packet.sip._all_fields
+    del sip_att['sip.msg_hdr']
+    thrift['sip_attributes'] = sip_att
     
-    for packet in root.findall('packet'):
-        packet_dict = {}
-        for proto_ET in packet.findall('proto'):
-            proto_name = proto_ET.get('name')
-            att_list = []
-            att_list.append(ET_out(proto_ET))
-            print(proto_name)
-            if proto_name in Config.sections():
-                if Config.has_option(proto_name, 'recurse') is True:
-                    depth = Config.get(proto_name, 'recurse')
-                    lists = get_recurse(proto_ET, depth)
-                    att_list.extend(lists)
-                else:
-                    for field_name in Config.options(proto_name):
-                        field_ET = proto_ET.find("field[@name='" +
-                                                field_name + "']")
-                        if field_ET:
-                            att_list.append(ET_out(field_ET))
-            packet_dict[proto_name] = att_list
-        packet_list.append(packet_dict)
-
-    return packet_list
-
-def ET_out(field_ET, att='showname'):
-    return field_ET.get(unescape(att))
-                
-def get_recurse(proto_ET, depth=1):
-    return_list = []
-
-    if depth > 1: 
-        for subfield_ET in proto_ET.findall('field'):
-            print("for subfield: ")
-            return_list.extend(get_recurse(subfield_ET, int(depth) - 1))
-    elif depth == 1:
-        if proto_ET.findall('field').__len__() > 0:
-            sub_list = []
-            for field_ET in proto_ET.findall('field'):
-                sub_list.append(ET_out(field_ET))
-            return_list.append({ET_out(proto_ET,'name'): sub_list})
-        else:
-            return_list.append(ET_out(proto_ET))
-    elif depth == 0:
-        print('Zero?')
-        return_list.append(ET_out(proto_ET))
-    else:
-        return False
-    
-    return return_list
-
+    return thrift 
 
 parser = argh.ArghParser()
 parser.add_commands([convert])
