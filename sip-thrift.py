@@ -21,7 +21,7 @@ def convert(path, host='DEFAULT', indent=None):
 
     return json_output
 
-def extract(packet):
+def extract(packet, host):
     thrift = {}
     thrift['utc_time'] = packet.sniff_timestamp
     thrift['protocols'] = [l.layer_name for l in packet.layers]
