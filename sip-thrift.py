@@ -28,11 +28,13 @@ def extract(packet, host):
     thrift['capture_host'] = host
     thrift['ip_src'] = packet.ip.src
     thrift['ip_dst'] = packet.ip.dst
-    thrift['call_id'] = packet.sip.get_field('Call-ID')
-    thrift['sip_headders'] = packet.sip.get_field('msg_hdr').split(r'\xd\xa')
-    sip_att = packet.sip._all_fields
-    del sip_att['sip.msg_hdr']
-    thrift['sip_attributes'] = sip_att
+    if hasattr(packet, 'sip'):
+        thrift['sip_call_id'] = packet.sip.get_field('Call-ID')
+        thrift['sip_method'] = packet.sip.get_field('Method')
+        thrift['sip_headders'] = packet.sip.get_field('msg_hdr').split(r'\xd\xa')
+        sip_att = packet.sip._all_fields
+        del sip_att['sip.msg_hdr']
+        thrift['sip_attributes'] = sip_att
     
     return thrift 
 

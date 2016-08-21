@@ -15,7 +15,8 @@ struct packet{
      3: string capture_host,
      4: ip ip_src,
      5: ip ip_dst,
-    16: string call_id,
+    16: string sip_call_id,
+    17: string sip_method,
     32: list<string> sip_headers,
     33: map<string, string> sip_attributes,
 }
