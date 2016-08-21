@@ -16,14 +16,7 @@ from sip import *
 from sip.ttypes import *
 
 
-
-def convert(path, host='DEFAULT', indent=None):
-    if indent:
-        indent = int(indent)
-        
-    packet_list = []    
-    
-
+def send(path, host='DEFAULT'):
     try:
         transport = TSocket.TSocket('localhost', 9090)
         transport = TTransport.TBufferedTransport(transport)
@@ -34,37 +27,31 @@ def convert(path, host='DEFAULT', indent=None):
 
         transport.open()
 
-        for packet in cap:
-            parsed = extract(packet, host)
+        for p in cap:
+            parsed = extract(p, host)
             client.send(parsed)
-            packet_list.append(parsed)
 
         transport.close()
 
-        json_output = json.dumps(packet_list, 
-                            indent=indent,
-                            separators=(',', ':'))
-
-        return json_output
     except Thrift.TException as te:
         print("TException: {}".format(te.message))
 
-def extract(packet, host):
-    thrift = {}
-    thrift['utc_time'] = packet.sniff_timestamp
-    thrift['protocols'] = [l.layer_name for l in packet.layers]
-    thrift['capture_host'] = host
-    thrift['ip_src'] = packet.ip.src
-    thrift['ip_dst'] = packet.ip.dst
-    if hasattr(packet, 'sip'):
-        thrift['sip_call_id'] = packet.sip.get_field('Call-ID')
-        thrift['sip_method'] = packet.sip.get_field('Method')
-        thrift['sip_headders'] = packet.sip.get_field('msg_hdr').split(r'\xd\xa')
-        sip_att = packet.sip._all_fields
-        del sip_att['sip.msg_hdr']
-        thrift['sip_attributes'] = sip_att
+def extract(cap_packet, host):
+    sip_packet = packet(utc_time=float(cap_packet.sniff_timestamp))
     
-    return thrift 
+    sip_packet.protocols = [l.layer_name for l in cap_packet.layers]
+    sip_packet.capture_host = host
+    sip_packet.ip_src = cap_packet.ip.src
+    sip_packet.ip_dst = cap_packet.ip.dst
+    if hasattr(cap_packet, 'sip'):
+        sip_packet.sip_call_id = cap_packet.sip.get_field('Call-ID')
+        sip_packet.sip_method = cap_packet.sip.get_field('Method')
+        sip_packet.sip_headers = cap_packet.sip.get_field('msg_hdr').split(r'\xd\xa')
+        sip_att = cap_packet.sip._all_fields
+        del sip_att['sip.msg_hdr']
+        sip_packet.sip_attributes = sip_att
+    
+    return sip_packet 
 
 parser = argh.ArghParser()
 parser.add_commands([convert])
