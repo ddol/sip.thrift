@@ -23,8 +23,11 @@ class SipHandler:
         return str(timeStamp)
 
     def send(self, packet):
-        print('The Packet was: ')
-        print(packet.__repr__())
+        print('Packet@{} {}->{} {}'.format(packet.utc_time,
+                                    packet.ip_src,
+                                    packet.ip_dst,
+                                    packet.sip_method
+                                ))
 
 handler = SipHandler()
 

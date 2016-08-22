@@ -54,7 +54,7 @@ def extract(cap_packet, host):
     return sip_packet 
 
 parser = argh.ArghParser()
-parser.add_commands([convert])
+parser.add_commands([send])
 
 if __name__ == '__main__':
     parser.dispatch()
