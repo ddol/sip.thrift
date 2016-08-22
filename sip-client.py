@@ -22,14 +22,13 @@ def send(path, host='DEFAULT'):
         transport = TTransport.TBufferedTransport(transport)
         protocol = TBinaryProtocol.TBinaryProtocol(transport)
         client = signalling.Client(protocol)
-
-        cap = pyshark.FileCapture(path)    
-
         transport.open()
 
-        for p in cap:
-            parsed = extract(p, host)
-            client.send(parsed)
+        def parse(packet):
+            client.send(extract(packet, host))
+
+        cap = pyshark.FileCapture(path, keep_packets=False)   
+        cap.apply_on_packets(parse)
 
         transport.close()
 
@@ -37,7 +36,7 @@ def send(path, host='DEFAULT'):
         print("TException: {}".format(te.message))
 
 def extract(cap_packet, host):
-    sip_packet = packet(utc_time=float(cap_packet.sniff_timestamp))
+    sip_packet = packet(utc_time=cap_packet.sniff_timestamp)
     
     sip_packet.protocols = [l.layer_name for l in cap_packet.layers]
     sip_packet.capture_host = host
